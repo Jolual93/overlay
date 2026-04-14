@@ -1,134 +1,625 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overlay Pro para Streamer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok LIVE Overlay</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  /* ============================================
+     SISTEMA DE TEMAS — edita aquí para cambiar
+     toda la estética del overlay de una vez
+  ============================================ */
+  :root {
+    --neon-primary:   #00f5ff;
+    --neon-secondary: #bf00ff;
+    --neon-accent:    #ff00aa;
+    --glass-bg:       rgba(5, 5, 20, 0.72);
+    --glass-border:   rgba(0, 245, 255, 0.22);
+    --glass-blur:     12px;
+    --progress-from:  #00f5ff;
+    --progress-to:    #bf00ff;
+    --text-primary:   #e8f4ff;
+    --text-muted:     rgba(200, 220, 255, 0.65);
+    --scanline-color: rgba(0, 245, 255, 0.035);
+    --cam-ring-1:     #00f5ff;
+    --cam-ring-2:     #bf00ff;
+    --panel-bg:       rgba(4, 4, 18, 0.94);
+  }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: transparent; /* Importante para el croma/transparencia */
-            font-family: 'Rajdhani', sans-serif;
-            color: white;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
+  /* Tema alternativo — descomenta para activar */
+  /*
+  :root {
+    --neon-primary:   #39ff14;
+    --neon-secondary: #ff6b00;
+    --neon-accent:    #ffe000;
+    --glass-bg:       rgba(0, 8, 0, 0.75);
+    --glass-border:   rgba(57, 255, 20, 0.22);
+    --progress-from:  #39ff14;
+    --progress-to:    #ff6b00;
+    --cam-ring-1:     #39ff14;
+    --cam-ring-2:     #ff6b00;
+  }
+  */
 
-        /* Animación de brillo para el borde */
-        @keyframes borderGlow {
-            0% { border-color: #ff0055; box-shadow: 0 0 10px #ff0055; }
-            50% { border-color: #00ffee; box-shadow: 0 0 20px #00ffee; }
-            100% { border-color: #ff0055; box-shadow: 0 0 10px #ff0055; }
-        }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .animated-border {
-            border: 2px solid #ff0055;
-            animation: borderGlow 3s infinite;
-        }
+  html, body {
+    background: transparent !important;
+    overflow: hidden;
+    width: 100%; height: 100%;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
 
-        .glass-panel {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+  /* ---- Glass Panel ---- */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: 14px;
+  }
 
-        /* Ticker de redes sociales */
-        @keyframes slide {
-            0% { transform: translateY(100%); opacity: 0; }
-            5% { transform: translateY(0); opacity: 1; }
-            30% { transform: translateY(0); opacity: 1; }
-            35% { transform: translateY(-100%); opacity: 0; }
-            100% { transform: translateY(-100%); opacity: 0; }
-        }
+  /* ---- Efecto scanlines ---- */
+  .scanlines::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--scanline-color) 0px,
+      var(--scanline-color) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+  }
 
-        .social-item {
-            position: absolute;
-            animation: slide 12s infinite;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
+  /* ---- Noise overlay ---- */
+  .noise::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 0;
+    opacity: 0.6;
+  }
 
-        .social-item:nth-child(2) { animation-delay: 4s; }
-        .social-item:nth-child(3) { animation-delay: 8s; }
+  /* ---- Marquesina ---- */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 28s linear infinite;
+    gap: 0;
+  }
+  .marquee-track:hover { animation-play-state: paused; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
 
-        /* Barra de progreso */
-        .progress-bar-fill {
-            width: 65%; /* Este valor se puede cambiar con JS */
-            transition: width 1s ease-in-out;
-            background: linear-gradient(90deg, #ff0055, #ffdd00);
-        }
-    </style>
+  /* ---- Cámara ---- */
+  .cam-wrapper {
+    position: relative;
+    width: 170px; height: 170px;
+  }
+  .cam-ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    animation: spin 4s linear infinite;
+  }
+  .cam-ring-1 {
+    border-top-color: var(--cam-ring-1);
+    border-right-color: var(--cam-ring-1);
+    box-shadow: 0 0 12px var(--cam-ring-1), inset 0 0 8px rgba(0,245,255,0.08);
+    animation-duration: 3.2s;
+  }
+  .cam-ring-2 {
+    border-bottom-color: var(--cam-ring-2);
+    border-left-color: var(--cam-ring-2);
+    inset: 8px;
+    box-shadow: 0 0 10px var(--cam-ring-2);
+    animation-duration: 5s;
+    animation-direction: reverse;
+  }
+  .cam-ring-3 {
+    border-top-color: var(--neon-accent);
+    inset: 18px;
+    border-width: 1.5px;
+    animation-duration: 7s;
+    opacity: 0.55;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .cam-inner {
+    position: absolute;
+    inset: 26px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .cam-pulse {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid var(--neon-primary);
+    animation: pulse-ring 2.4s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    100% { transform: scale(1.18); opacity: 0; }
+  }
+
+  /* ---- Barra de progreso ---- */
+  .progress-track {
+    height: 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--progress-from), var(--progress-to));
+    background-size: 200% 100%;
+    animation: progress-flow 2.5s linear infinite, progress-glow 2s ease-in-out infinite alternate;
+    position: relative;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--neon-primary);
+    box-shadow: 0 0 10px var(--neon-primary), 0 0 20px var(--neon-primary);
+    animation: dot-beat 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes progress-flow {
+    from { background-position: 0% 50%; }
+    to   { background-position: 200% 50%; }
+  }
+  @keyframes progress-glow {
+    from { filter: drop-shadow(0 0 4px var(--progress-from)); }
+    to   { filter: drop-shadow(0 0 8px var(--progress-to)); }
+  }
+  @keyframes dot-beat {
+    from { transform: translateY(-50%) scale(1); }
+    to   { transform: translateY(-50%) scale(1.35); }
+  }
+
+  /* ---- Texto neón ---- */
+  .neon-text {
+    color: var(--neon-primary);
+    text-shadow: 0 0 8px var(--neon-primary), 0 0 20px rgba(0,245,255,0.4);
+  }
+  .neon-text-sec {
+    color: var(--neon-secondary);
+    text-shadow: 0 0 8px var(--neon-secondary);
+  }
+
+  /* ---- Badge LIVE ---- */
+  .live-badge {
+    background: linear-gradient(135deg, #ff0044, #ff006a);
+    box-shadow: 0 0 12px rgba(255,0,68,0.7);
+    animation: badge-flicker 4s ease-in-out infinite;
+  }
+  @keyframes badge-flicker {
+    0%,100% { opacity: 1; }
+    92%      { opacity: 1; }
+    93%      { opacity: 0.6; }
+    94%      { opacity: 1; }
+    96%      { opacity: 0.7; }
+    97%      { opacity: 1; }
+  }
+
+  /* ---- Panel de Control ---- */
+  #control-panel {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.92);
+    z-index: 9999;
+    width: min(480px, 92vw);
+    background: var(--panel-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    backdrop-filter: blur(20px);
+  }
+  #control-panel.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #control-panel label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+  #control-panel input[type=text],
+  #control-panel input[type=number] {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #control-panel input:focus {
+    border-color: var(--neon-primary);
+  }
+  #control-panel input[type=color] {
+    width: 42px; height: 32px;
+    border: none; border-radius: 6px;
+    cursor: pointer; padding: 2px;
+    background: transparent;
+  }
+  .panel-close {
+    position: absolute; top: 14px; right: 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px; cursor: pointer;
+  }
+  .panel-close:hover { color: var(--neon-primary); }
+  .panel-section-title {
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--neon-primary);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 6px;
+    margin-top: 18px;
+    margin-bottom: 2px;
+  }
+  .color-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .color-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+
+  /* ---- Hotkey hint ---- */
+  .hotkey-hint {
+    position: fixed;
+    bottom: 14px; right: 18px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.18);
+    letter-spacing: .05em;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ---- Layout responsivo ---- */
+  @media (max-aspect-ratio: 1/1) {
+    /* Vertical — TikTok 1080x1920 */
+    #overlay-root { flex-direction: column; justify-content: space-between; padding: 18px 14px 80px; }
+    #social-bar   { order: 0; }
+    #cam-section  { order: 1; align-self: center; }
+    #goals-section { order: 2; }
+  }
+  @media (min-aspect-ratio: 1/1) {
+    /* Horizontal — 1920x1080 */
+    #overlay-root { flex-direction: row; align-items: flex-end; justify-content: space-between; padding: 0 24px 24px; }
+    #social-bar   { position: fixed; top: 0; left: 0; right: 0; }
+    #cam-section  { flex-shrink: 0; }
+    #goals-section { flex: 1; max-width: 340px; }
+  }
+</style>
 </head>
 <body>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="relative w-full h-full p-6">
-        
-        <!-- 1. ESQUINA SUPERIOR IZQUIERDA: REDES SOCIALES -->
-        <div class="absolute top-6 left-6 w-64 h-12 glass-panel rounded-lg overflow-hidden flex items-center px-4">
-            <div class="relative w-full h-full">
-                <div class="social-item">
-                    <span class="bg-red-600 p-1 rounded">YT</span>
-                    <span class="font-bold">TuCanalDeRakion</span>
-                </div>
-                <div class="social-item">
-                    <span class="bg-blue-600 p-1 rounded">FB</span>
-                    <span class="font-bold">Comunidad Rakion</span>
-                </div>
-                <div class="social-item">
-                    <span class="bg-gradient-to-tr from-purple-500 to-pink-500 p-1 rounded">IG</span>
-                    <span class="font-bold">@tu_usuario</span>
-                </div>
-            </div>
-        </div>
+<!-- ============================================================
+     OBJETO DE CONFIGURACIÓN — edita solo este bloque
+     para personalizar todo el overlay sin tocar el HTML
+============================================================ -->
+<script>
+const CONFIG = {
+  streamer: {
+    name: "StreamerName",
+    liveBadge: true,
+  },
+  socials: [
+    { platform: "youtube",   handle: "@TuCanal",     icon: "fab fa-youtube",   color: "#ff0000" },
+    { platform: "tiktok",    handle: "@TuTikTok",    icon: "fab fa-tiktok",    color: "#00f5ff" },
+    { platform: "instagram", handle: "@TuInstagram", icon: "fab fa-instagram", color: "#e1306c" },
+    { platform: "twitch",    handle: "@TuTwitch",    icon: "fab fa-twitch",    color: "#9147ff" },
+    { platform: "discord",   handle: "TuDiscord",    icon: "fab fa-discord",   color: "#5865f2" },
+    { platform: "twitter",   handle: "@TuTwitter",   icon: "fab fa-x-twitter", color: "#e8f4ff" },
+  ],
+  rules: [
+    "🚫 Sin toxicidad ni faltas de respeto",
+    "✅ Comparte el live si te gusta",
+    "🎮 Pregunta lo que quieras del gameplay",
+    "❤️ Apoya con likes para más contenido",
+    "🔔 Activa notificaciones para no perderte nada",
+  ],
+  goals: [
+    { label: "Meta 1",  target: 1000,  current: 420,  unit: "seguidores" },
+    { label: "Meta 2",  target: 5000,  current: 3100, unit: "likes totales" },
+    { label: "Regalos", target: 200,   current: 87,   unit: "regalos" },
+  ],
+  camera: {
+    showAvatar: true,
+    avatarInitials: "SN",
+    showLive: true,
+  },
+};
+</script>
 
-        <!-- 2. MARCO DE CÁMARA (Opcional, se ajusta al tamaño de tu cámara en Studio) -->
-        <div class="absolute top-6 right-6 w-48 h-48 animated-border rounded-lg flex items-center justify-center text-xs text-white/30 italic">
-            Zona de Cámara
-        </div>
+<!-- ============================================================
+     ESTRUCTURA PRINCIPAL DEL OVERLAY
+============================================================ -->
+<div id="overlay-root" style="position:fixed;inset:0;display:flex;pointer-events:none;">
 
-        <!-- 3. BARRA DE METAS (CENTRO INFERIOR) -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-1/3">
-            <div class="flex justify-between mb-2 text-sm font-bold uppercase tracking-widest">
-                <span>Meta de Seguidores</span>
-                <span id="goal-text">650 / 1000</span>
-            </div>
-            <div class="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-white/20">
-                <div class="h-full progress-bar-fill shadow-[0_0_15px_rgba(255,0,85,0.5)]"></div>
-            </div>
-        </div>
+  <!-- ── MARQUESINA DE REDES SOCIALES ── -->
+  <div id="social-bar" style="position:fixed;top:0;left:0;right:0;z-index:50;overflow:hidden;pointer-events:none;">
+    <div class="glass" style="border-radius:0 0 12px 12px;border-top:none;padding:8px 0;">
+      <div class="marquee-track" id="marquee-content"></div>
+    </div>
+  </div>
 
-        <!-- 4. PANEL DE EVENTOS / REGLAS (DERECHA INFERIOR) -->
-        <div class="absolute bottom-10 right-6 w-64 glass-panel p-4 rounded-xl border-l-4 border-cyan-400">
-            <h3 class="text-cyan-400 font-bold mb-1 uppercase text-sm">Sala Actual: Torneo</h3>
-            <p class="text-xs text-gray-300">Reglas: No Pets, No Armor S, Solo Cell Basic.</p>
-            <div class="mt-3 flex items-center gap-2">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-[10px] uppercase">Servidor: Latino</span>
-            </div>
-        </div>
+  <!-- ── SECCIÓN CÁMARA ── -->
+  <div id="cam-section" style="pointer-events:none;">
+    <div class="cam-wrapper">
+      <div class="cam-pulse"></div>
+      <div class="cam-ring cam-ring-1"></div>
+      <div class="cam-ring cam-ring-2"></div>
+      <div class="cam-ring cam-ring-3"></div>
+      <div class="cam-inner">
+        <div id="cam-avatar" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;letter-spacing:1px;" class="neon-text"></div>
+      </div>
+      <div id="live-badge" class="live-badge" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);padding:3px 14px;border-radius:99px;font-size:11px;font-weight:800;color:#fff;letter-spacing:.12em;display:none;">LIVE</div>
+    </div>
+    <div style="text-align:center;margin-top:8px;">
+      <span id="streamer-name" class="neon-text" style="font-size:15px;font-weight:700;letter-spacing:.06em;"></span>
+    </div>
+  </div>
 
+  <!-- ── SECCIÓN METAS + REGLAS ── -->
+  <div id="goals-section" style="display:flex;flex-direction:column;gap:12px;pointer-events:none;">
+
+    <!-- Reglas de sala -->
+    <div class="glass scanlines noise" id="rules-panel" style="position:relative;overflow:hidden;padding:14px 16px;">
+      <div style="position:relative;z-index:2;">
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;" class="neon-text">
+          <i class="fas fa-shield-halved" style="margin-right:6px;opacity:.8;"></i>Reglas de Sala
+        </div>
+        <ul id="rules-list" style="list-style:none;display:flex;flex-direction:column;gap:6px;"></ul>
+      </div>
     </div>
 
-    <script>
-        // Función para actualizar la meta dinámicamente si fuera necesario
-        function updateGoal(current, total) {
-            const percentage = (current / total) * 100;
-            document.querySelector('.progress-bar-fill').style.width = percentage + '%';
-            document.getElementById('goal-text').innerText = `${current} / ${total}`;
-        }
+    <!-- Metas de seguidores -->
+    <div class="glass" style="padding:14px 16px;" id="goals-panel">
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;" class="neon-text">
+        <i class="fas fa-bullseye" style="margin-right:6px;opacity:.8;"></i>Metas
+      </div>
+      <div id="goals-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
 
-        // Ejemplo: Actualizar después de 2 segundos
-        setTimeout(() => {
-            updateGoal(720, 1000);
-        }, 2000);
-    </script>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL DE CONTROL (activa con tecla C)
+============================================================ -->
+<div id="control-panel">
+  <button class="panel-close" onclick="togglePanel()" title="Cerrar">✕</button>
+  <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">
+    <i class="fas fa-sliders" style="margin-right:8px;color:var(--neon-primary);"></i>Panel de Control
+  </div>
+  <div style="font-size:11px;color:var(--text-muted);">Cambios en tiempo real · Presiona C para cerrar</div>
+
+  <div class="panel-section-title">Streamer</div>
+  <label>Nombre del streamer</label>
+  <input type="text" id="p-name" oninput="updateStreamer()" placeholder="StreamerName">
+
+  <div class="panel-section-title">Metas</div>
+  <div id="p-goals-container"></div>
+
+  <div class="panel-section-title">Reglas</div>
+  <div id="p-rules-container"></div>
+
+  <div class="panel-section-title">Colores del tema</div>
+  <div class="color-row">
+    <div class="color-item">
+      <input type="color" id="c-primary" oninput="updateThemeColor('--neon-primary',this.value)">
+      <span>Primario</span>
+    </div>
+    <div class="color-item">
+      <input type="color" id="c-secondary" oninput="updateThemeColor('--neon-secondary',this.value)">
+      <span>Secundario</span>
+    </div>
+    <div class="color-item">
+      <input type="color" id="c-accent" oninput="updateThemeColor('--neon-accent',this.value)">
+      <span>Acento</span>
+    </div>
+  </div>
+</div>
+
+<div class="hotkey-hint">C — Panel de Control</div>
+
+<!-- ============================================================
+     JAVASCRIPT — Renderizado + Control Panel
+============================================================ -->
+<script>
+/* ---------- Render inicial ---------- */
+function init() {
+  buildMarquee();
+  buildCamera();
+  buildRules();
+  buildGoals();
+  buildControlPanel();
+  syncColorPickers();
+}
+
+/* --- Marquesina --- */
+function buildMarquee() {
+  const el = document.getElementById('marquee-content');
+  const items = [...CONFIG.socials, ...CONFIG.socials]; // duplicado para loop
+  el.innerHTML = items.map(s => `
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:0 28px;white-space:nowrap;">
+      <i class="${s.icon}" style="font-size:15px;color:${s.color};"></i>
+      <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${s.handle}</span>
+      <span style="color:var(--glass-border);font-size:10px;margin-left:4px;">•</span>
+    </div>
+  `).join('');
+}
+
+/* --- Cámara --- */
+function buildCamera() {
+  const c = CONFIG.camera;
+  const streamer = CONFIG.streamer;
+  const avatar = document.getElementById('cam-avatar');
+  avatar.textContent = c.avatarInitials || streamer.name.slice(0, 2).toUpperCase();
+  document.getElementById('streamer-name').textContent = streamer.name;
+  const liveBadge = document.getElementById('live-badge');
+  if (c.showLive && streamer.liveBadge) liveBadge.style.display = 'block';
+}
+
+/* --- Reglas --- */
+function buildRules() {
+  const list = document.getElementById('rules-list');
+  list.innerHTML = CONFIG.rules.map(r => `
+    <li style="font-size:12px;color:var(--text-muted);line-height:1.5;">${r}</li>
+  `).join('');
+}
+
+/* --- Metas --- */
+function buildGoals() {
+  const container = document.getElementById('goals-list');
+  container.innerHTML = CONFIG.goals.map((g, i) => {
+    const pct = Math.min(100, Math.round((g.current / g.target) * 100));
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text-primary);">${g.label}</span>
+          <span style="font-size:11px;color:var(--text-muted);">
+            <span style="color:var(--neon-primary);font-weight:700;">${g.current.toLocaleString()}</span>
+            / ${g.target.toLocaleString()} ${g.unit}
+            <span style="margin-left:4px;font-size:10px;color:var(--neon-secondary);">${pct}%</span>
+          </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="prog-${i}" style="width:${pct}%;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- Panel de control ---------- */
+let panelOpen = false;
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('control-panel').classList.toggle('visible', panelOpen);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'c' || e.key === 'C') togglePanel();
+});
+
+function buildControlPanel() {
+  // Nombre
+  document.getElementById('p-name').value = CONFIG.streamer.name;
+
+  // Metas
+  const gc = document.getElementById('p-goals-container');
+  gc.innerHTML = CONFIG.goals.map((g, i) => `
+    <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:8px;align-items:end;">
+      <div>
+        <label>Meta ${i+1} — etiqueta</label>
+        <input type="text" value="${g.label}" oninput="updateGoalLabel(${i},this.value)">
+      </div>
+      <div>
+        <label>Actual</label>
+        <input type="number" value="${g.current}" oninput="updateGoalValue(${i},'current',+this.value)">
+      </div>
+      <div>
+        <label>Objetivo</label>
+        <input type="number" value="${g.target}" oninput="updateGoalValue(${i},'target',+this.value)">
+      </div>
+    </div>
+  `).join('');
+
+  // Reglas
+  const rc = document.getElementById('p-rules-container');
+  rc.innerHTML = CONFIG.rules.map((r, i) => `
+    <label>Regla ${i+1}</label>
+    <input type="text" value="${r}" oninput="updateRule(${i},this.value)">
+  `).join('');
+}
+
+function updateStreamer() {
+  const val = document.getElementById('p-name').value;
+  CONFIG.streamer.name = val;
+  document.getElementById('streamer-name').textContent = val;
+  const av = document.getElementById('cam-avatar');
+  av.textContent = val.slice(0, 2).toUpperCase();
+  CONFIG.camera.avatarInitials = val.slice(0, 2).toUpperCase();
+}
+
+function updateGoalLabel(i, val) {
+  CONFIG.goals[i].label = val;
+  buildGoals();
+}
+function updateGoalValue(i, key, val) {
+  CONFIG.goals[i][key] = val;
+  buildGoals();
+}
+function updateRule(i, val) {
+  CONFIG.rules[i] = val;
+  buildRules();
+}
+
+/* ---------- Variables de color ---------- */
+function updateThemeColor(varName, value) {
+  document.documentElement.style.setProperty(varName, value);
+  if (varName === '--neon-primary') {
+    document.documentElement.style.setProperty('--progress-from', value);
+    document.documentElement.style.setProperty('--cam-ring-1', value);
+  }
+  if (varName === '--neon-secondary') {
+    document.documentElement.style.setProperty('--progress-to', value);
+    document.documentElement.style.setProperty('--cam-ring-2', value);
+  }
+}
+
+function syncColorPickers() {
+  const s = getComputedStyle(document.documentElement);
+  const toHex = v => {
+    v = v.trim();
+    if (v.startsWith('#')) return v.slice(0, 7);
+    const m = v.match(/\d+/g);
+    if (!m || m.length < 3) return '#00f5ff';
+    return '#' + m.slice(0,3).map(n => (+n).toString(16).padStart(2,'0')).join('');
+  };
+  document.getElementById('c-primary').value   = toHex(s.getPropertyValue('--neon-primary'));
+  document.getElementById('c-secondary').value = toHex(s.getPropertyValue('--neon-secondary'));
+  document.getElementById('c-accent').value    = toHex(s.getPropertyValue('--neon-accent'));
+}
+
+/* ---------- Arranque ---------- */
+init();
+</script>
 </body>
 </html>
