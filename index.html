@@ -6,326 +6,127 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-/* ══════════════════════════════════════════
-   TEMA — cambia estos valores para rediseñar
-   ══════════════════════════════════════════ */
 :root {
-  --neon-primary:    #00f5ff;
-  --neon-secondary:  #bf00ff;
-  --neon-accent:     #ff00aa;
-  --glass-bg:        rgba(4, 4, 18, 0.78);
-  --glass-border:    rgba(0, 245, 255, 0.20);
-  --glass-blur:      14px;
-  --progress-from:   #00f5ff;
-  --progress-to:     #bf00ff;
-  --text-primary:    #e8f4ff;
-  --text-muted:      rgba(200, 220, 255, 0.60);
-  --scanline-color:  rgba(0, 245, 255, 0.032);
-  --cam-ring-1:      #00f5ff;
-  --cam-ring-2:      #bf00ff;
-  --panel-bg:        rgba(3, 3, 16, 0.96);
+  --neon-primary:   #00f5ff;
+  --neon-secondary: #bf00ff;
+  --neon-accent:    #ff00aa;
+  --glass-bg:       rgba(4, 4, 18, 0.78);
+  --glass-border:   rgba(0, 245, 255, 0.20);
+  --glass-blur:     14px;
+  --progress-from:  #00f5ff;
+  --progress-to:    #bf00ff;
+  --text-primary:   #e8f4ff;
+  --text-muted:     rgba(200, 220, 255, 0.60);
+  --scanline-color: rgba(0, 245, 255, 0.032);
+  --cam-ring-1:     #00f5ff;
+  --cam-ring-2:     #bf00ff;
+  --panel-bg:       rgba(3, 3, 16, 0.96);
+  --cam-size:       180px;
+  --cam-hole:       118px;
+  --sidebar-w:      310px;
+  --topbar-h:       44px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:transparent !important; overflow:hidden; width:100vw; height:100vh; font-family:'Segoe UI',system-ui,sans-serif; }
 
-  /* Layout fijo — NO cambiar */
-  --cam-size:        160px;
-  --sidebar-w:       310px;
-  --topbar-h:        44px;
-}
+.glass { background:var(--glass-bg); border:1px solid var(--glass-border); backdrop-filter:blur(var(--glass-blur)); -webkit-backdrop-filter:blur(var(--glass-blur)); border-radius:14px; }
+.scanlines::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,var(--scanline-color) 0px,var(--scanline-color) 1px,transparent 1px,transparent 3px); pointer-events:none; border-radius:inherit; z-index:1; }
+.noise::before { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-size:200px 200px; pointer-events:none; border-radius:inherit; z-index:0; opacity:.55; }
 
-*  { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  background: transparent !important;
-  overflow: hidden;
-  width: 100vw; height: 100vh;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-}
-
-/* ── Glass ── */
-.glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-radius: 14px;
-}
-
-/* ── Scanlines ── */
-.scanlines::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    var(--scanline-color) 0px, var(--scanline-color) 1px,
-    transparent 1px, transparent 3px
-  );
-  pointer-events: none; border-radius: inherit; z-index: 1;
-}
-/* ── Noise ── */
-.noise::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  pointer-events: none; border-radius: inherit; z-index: 0; opacity: 0.55;
-}
-
-/* ── Marquesina ── */
-.marquee-wrap { overflow: hidden; }
-.marquee-track {
-  display: flex; width: max-content;
-  animation: marquee 30s linear infinite;
-}
-.marquee-track:hover { animation-play-state: paused; }
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
+.marquee-wrap { overflow:hidden; }
+.marquee-track { display:flex; width:max-content; animation:marquee 30s linear infinite; }
+.marquee-track:hover { animation-play-state:paused; }
+@keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
 /* ── Cámara ── */
-.cam-wrapper {
-  position: relative;
-  width: var(--cam-size); height: var(--cam-size);
-  flex-shrink: 0;
-}
-.cam-ring {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  border: 2.5px solid transparent;
-  animation: spin 4s linear infinite;
-}
-.cam-ring-1 {
-  border-top-color: var(--cam-ring-1);
-  border-right-color: var(--cam-ring-1);
-  box-shadow: 0 0 10px var(--cam-ring-1);
-  animation-duration: 3.2s;
-}
-.cam-ring-2 {
-  border-bottom-color: var(--cam-ring-2);
-  border-left-color: var(--cam-ring-2);
-  inset: 7px;
-  box-shadow: 0 0 8px var(--cam-ring-2);
-  animation-duration: 5s;
-  animation-direction: reverse;
-}
-.cam-ring-3 {
-  border-top-color: var(--neon-accent);
-  inset: 16px; border-width: 1.5px;
-  animation-duration: 7s; opacity: 0.5;
-}
-.cam-pulse {
-  position: absolute; inset: -5px;
-  border-radius: 50%;
-  border: 1.5px solid var(--neon-primary);
-  animation: pulse-ring 2.5s ease-out infinite;
-  opacity: 0;
-}
-@keyframes pulse-ring {
-  0%   { transform: scale(1);    opacity: 0.7; }
-  100% { transform: scale(1.16); opacity: 0; }
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-.cam-inner {
-  position: absolute; inset: 24px;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+.cam-wrapper { position:relative; width:var(--cam-size); height:var(--cam-size); flex-shrink:0; }
+.cam-ring { position:absolute; inset:0; border-radius:50%; border:2.5px solid transparent; animation:spin 4s linear infinite; pointer-events:none; z-index:3; }
+.cam-ring-1 { border-top-color:var(--cam-ring-1); border-right-color:var(--cam-ring-1); box-shadow:0 0 10px var(--cam-ring-1); animation-duration:3.2s; }
+.cam-ring-2 { border-bottom-color:var(--cam-ring-2); border-left-color:var(--cam-ring-2); inset:7px; box-shadow:0 0 8px var(--cam-ring-2); animation-duration:5s; animation-direction:reverse; }
+.cam-ring-3 { border-top-color:var(--neon-accent); inset:16px; border-width:1.5px; animation-duration:7s; opacity:.5; }
+.cam-pulse { position:absolute; inset:-5px; border-radius:50%; border:1.5px solid var(--neon-primary); animation:pulse-ring 2.5s ease-out infinite; opacity:0; z-index:2; pointer-events:none; }
+@keyframes pulse-ring { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.16);opacity:0} }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* ── AGUJERO CIRCULAR TRANSPARENTE ──
+   Gradiente radial: centro = transparent (la cámara se ve),
+   exterior = semiopaco (tapa el fondo fuera del círculo)    */
+.cam-mask-outer {
+  position:absolute; inset:0; border-radius:50%; z-index:1; pointer-events:none;
+  background: radial-gradient(
+    circle at center,
+    transparent calc(var(--cam-hole) / 2),
+    rgba(4,4,18,0.88) calc(calc(var(--cam-hole) / 2) + 3px)
+  );
 }
 
-/* ── LIVE badge ── */
-.live-badge {
-  background: linear-gradient(135deg, #ff0044, #ff006a);
-  box-shadow: 0 0 12px rgba(255,0,68,0.75);
-  animation: flicker 5s ease-in-out infinite;
-}
-@keyframes flicker {
-  0%,100% { opacity:1; }
-  91%      { opacity:1; }
-  92%      { opacity:0.5; }
-  93%      { opacity:1; }
-  95%      { opacity:0.65; }
-  96%      { opacity:1; }
-}
+.live-badge { background:linear-gradient(135deg,#ff0044,#ff006a); box-shadow:0 0 12px rgba(255,0,68,.75); animation:flicker 5s ease-in-out infinite; }
+@keyframes flicker { 0%,100%{opacity:1} 91%{opacity:1} 92%{opacity:.5} 93%{opacity:1} 95%{opacity:.65} 96%{opacity:1} }
 
-/* ── Barra de progreso ── */
-.progress-track {
-  height: 9px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 99px; overflow: hidden; position: relative;
-}
-.progress-fill {
-  height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, var(--progress-from), var(--progress-to), var(--progress-from));
-  background-size: 200% 100%;
-  animation: prog-flow 2.5s linear infinite, prog-glow 2s ease-in-out infinite alternate;
-  transition: width 1.4s cubic-bezier(.4,0,.2,1);
-  position: relative;
-}
-.progress-fill::after {
-  content: '';
-  position: absolute; right: -1px; top: 50%;
-  transform: translateY(-50%);
-  width: 13px; height: 13px;
-  border-radius: 50%;
-  background: var(--neon-primary);
-  box-shadow: 0 0 8px var(--neon-primary), 0 0 16px var(--neon-primary);
-  animation: dot-beat 1.2s ease-in-out infinite alternate;
-}
-@keyframes prog-flow  { from{background-position:0%} to{background-position:200%} }
-@keyframes prog-glow  { from{filter:drop-shadow(0 0 3px var(--progress-from))} to{filter:drop-shadow(0 0 7px var(--progress-to))} }
-@keyframes dot-beat   { from{transform:translateY(-50%) scale(1)} to{transform:translateY(-50%) scale(1.4)} }
+.progress-track { height:9px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; position:relative; }
+.progress-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--progress-from),var(--progress-to),var(--progress-from)); background-size:200% 100%; animation:prog-flow 2.5s linear infinite,prog-glow 2s ease-in-out infinite alternate; transition:width 1.4s cubic-bezier(.4,0,.2,1); position:relative; }
+.progress-fill::after { content:''; position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:13px; height:13px; border-radius:50%; background:var(--neon-primary); box-shadow:0 0 8px var(--neon-primary),0 0 16px var(--neon-primary); animation:dot-beat 1.2s ease-in-out infinite alternate; }
+@keyframes prog-flow { from{background-position:0%} to{background-position:200%} }
+@keyframes prog-glow { from{filter:drop-shadow(0 0 3px var(--progress-from))} to{filter:drop-shadow(0 0 7px var(--progress-to))} }
+@keyframes dot-beat { from{transform:translateY(-50%) scale(1)} to{transform:translateY(-50%) scale(1.4)} }
 
-/* ── Textos neón ── */
-.neon  { color: var(--neon-primary);   text-shadow: 0 0 6px var(--neon-primary),  0 0 16px rgba(0,245,255,0.35); }
-.neon2 { color: var(--neon-secondary); text-shadow: 0 0 6px var(--neon-secondary); }
+.neon  { color:var(--neon-primary);   text-shadow:0 0 6px var(--neon-primary),0 0 16px rgba(0,245,255,.35); }
+.neon2 { color:var(--neon-secondary); text-shadow:0 0 6px var(--neon-secondary); }
 
-/* ── Stat chips (seguidores / likes) ── */
-.stat-chip {
-  display: flex; flex-direction: column; align-items: center;
-  background: rgba(0,245,255,0.06);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px; padding: 6px 12px;
-  min-width: 80px;
-}
-.stat-value { font-size: 17px; font-weight: 700; line-height: 1.1; }
-.stat-label { font-size: 9px; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+.stat-chip { display:flex; flex-direction:column; align-items:center; background:rgba(0,245,255,.06); border:1px solid var(--glass-border); border-radius:10px; padding:6px 12px; min-width:80px; }
+.stat-value { font-size:17px; font-weight:700; line-height:1.1; }
+.stat-label { font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin-top:2px; }
 
-/* ── Status dot (fetch) ── */
-.status-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 5px #22c55e;
-  animation: blink 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-.status-dot.error { background: #ef4444; box-shadow: 0 0 5px #ef4444; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow:0 0 5px #22c55e; animation:blink 2s ease-in-out infinite; flex-shrink:0; }
+.status-dot.error { background:#ef4444; box-shadow:0 0 5px #ef4444; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-/* ── Panel de control ── */
-#ctrl-panel {
-  position: fixed; top: 50%; left: 50%;
-  transform: translate(-50%,-50%) scale(.93);
-  z-index: 9999;
-  width: min(500px, 94vw);
-  background: var(--panel-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 18px; padding: 22px 24px;
-  opacity: 0; pointer-events: none;
-  transition: opacity .22s, transform .22s;
-  backdrop-filter: blur(22px);
-  max-height: 90vh; overflow-y: auto;
-}
-#ctrl-panel.open { opacity: 1; pointer-events: all; transform: translate(-50%,-50%) scale(1); }
-#ctrl-panel label  { display:block; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin:10px 0 3px; }
-#ctrl-panel input[type=text],
-#ctrl-panel input[type=number] {
-  width:100%; background:rgba(255,255,255,.06); border:1px solid var(--glass-border);
-  border-radius:8px; color:var(--text-primary); padding:7px 11px; font-size:13px; outline:none;
-  transition:border-color .18s;
-}
-#ctrl-panel input:focus { border-color: var(--neon-primary); }
+#ctrl-panel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.93); z-index:9999; width:min(500px,94vw); background:var(--panel-bg); border:1px solid var(--glass-border); border-radius:18px; padding:22px 24px; opacity:0; pointer-events:none; transition:opacity .22s,transform .22s; backdrop-filter:blur(22px); max-height:90vh; overflow-y:auto; }
+#ctrl-panel.open { opacity:1; pointer-events:all; transform:translate(-50%,-50%) scale(1); }
+#ctrl-panel label { display:block; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin:10px 0 3px; }
+#ctrl-panel input[type=text],#ctrl-panel input[type=number] { width:100%; background:rgba(255,255,255,.06); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); padding:7px 11px; font-size:13px; outline:none; transition:border-color .18s; }
+#ctrl-panel input:focus { border-color:var(--neon-primary); }
 #ctrl-panel input[type=color] { width:38px; height:30px; border:none; border-radius:6px; cursor:pointer; padding:2px; background:transparent; }
+#ctrl-panel input[type=range] { width:100%; }
 .section-title { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--neon-primary); border-bottom:1px solid var(--glass-border); padding-bottom:5px; margin-top:16px; }
 .color-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
 .color-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
 
-/* ── Hotkey hint ── */
+#topbar { position:fixed; top:0; left:0; right:0; height:var(--topbar-h); z-index:40; }
+#cam-block { position:fixed; top:calc(var(--topbar-h) + 10px); left:14px; z-index:30; display:flex; flex-direction:column; align-items:center; gap:6px; }
+#sidebar { position:fixed; top:calc(var(--topbar-h) + 10px); right:14px; width:var(--sidebar-w); z-index:30; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - var(--topbar-h) - 20px); }
+#stat-bar { position:fixed; bottom:14px; left:14px; z-index:30; display:flex; gap:10px; align-items:center; }
 .hotkey { position:fixed; bottom:10px; right:14px; font-size:10px; color:rgba(255,255,255,.18); pointer-events:none; letter-spacing:.04em; z-index:50; }
 
-/* ════════════════════════════════════════
-   LAYOUT PRINCIPAL — posiciones absolutas
-   ════════════════════════════════════════ */
-
-/* Barra superior — marquesina */
-#topbar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: var(--topbar-h);
-  z-index: 40;
-}
-
-/* Bloque superior izquierdo: webcam + nombre */
-#cam-block {
-  position: fixed;
-  top: calc(var(--topbar-h) + 10px);
-  left: 14px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Sidebar derecho: reglas + metas */
-#sidebar {
-  position: fixed;
-  top: calc(var(--topbar-h) + 10px);
-  right: 14px;
-  width: var(--sidebar-w);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - var(--topbar-h) - 20px);
-}
-
-/* Stat bar inferior izquierda (seguidores / likes en vivo) */
-#stat-bar {
-  position: fixed;
-  bottom: 14px;
-  left: 14px;
-  z-index: 30;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* ── Aviso de cámara ── */
-#cam-notice {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--panel-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  padding: 20px 28px;
-  text-align: center;
-  z-index: 999;
-  display: none;
-}
+/* Guía punteada (solo ayuda visual al configurar) */
+#cam-guide { position:fixed; top:calc(var(--topbar-h) + 10px); left:14px; width:var(--cam-size); height:var(--cam-size); pointer-events:none; z-index:5; }
+#cam-guide-circle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:var(--cam-hole); height:var(--cam-hole); border-radius:50%; border:1.5px dashed rgba(0,245,255,0.5); animation:guide-pulse 2s ease-in-out infinite; }
+@keyframes guide-pulse { 0%,100%{border-color:rgba(0,245,255,.5)} 50%{border-color:rgba(0,245,255,.15)} }
+#cam-guide-label { position:absolute; bottom:-20px; left:50%; transform:translateX(-50%); font-size:9px; color:rgba(0,245,255,.5); white-space:nowrap; letter-spacing:.05em; }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════
-     CONFIG — edita solo aquí
-     ════════════════════════════════════════ -->
 <script>
 const CFG = {
-  streamer: { name: "Jolual", initials: "JL" },
-
+  streamer: { name:"Jolual", initials:"JL" },
   tiktok: {
-    username: "jolualfm",
-    fetchInterval: 30000,
-    goals: [
-      { label: "Seguidores", targetK: 10, unit: "K" },
-      { label: "Likes totales", targetM: 1, unit: "M" },
+    username:"jolualfm",
+    fetchInterval:30000,
+    goals:[
+      { label:"Seguidores",   targetK:10, unit:"K" },
+      { label:"Likes totales",targetM:1,  unit:"M" },
     ]
   },
-
-  socials: [
-    { handle: "@jolualfm",  icon: "fab fa-tiktok",    color: "#00f5ff" },
-    { handle: "jolual",     icon: "fab fa-discord",   color: "#5865f2" },
-    { handle: "@jolual18",  icon: "fab fa-instagram", color: "#e1306c" },
-    { handle: "@jolualfm",  icon: "fab fa-youtube",   color: "#ff0000" },
-    { handle: "@jolualfm",  icon: "fab fa-twitch",    color: "#9147ff" },
-    { handle: "@jolualfm",  icon: "fab fa-x-twitter", color: "#e8f4ff" },
+  socials:[
+    { handle:"@jolualfm", icon:"fab fa-tiktok",    color:"#00f5ff" },
+    { handle:"jolual",    icon:"fab fa-discord",   color:"#5865f2" },
+    { handle:"@jolual18", icon:"fab fa-instagram", color:"#e1306c" },
+    { handle:"@jolualfm", icon:"fab fa-youtube",   color:"#ff0000" },
+    { handle:"@jolualfm", icon:"fab fa-twitch",    color:"#9147ff" },
+    { handle:"@jolualfm", icon:"fab fa-x-twitter", color:"#e8f4ff" },
   ],
-
-  rules: [
+  rules:[
     "🚫 Sin toxicidad ni faltas de respeto",
     "✅ Comparte el live si te gusta",
     "🎮 Pregunta lo que quieras del gameplay",
@@ -335,56 +136,48 @@ const CFG = {
 };
 </script>
 
-<!-- ── BARRA SUPERIOR (marquesina) ── -->
+<!-- MARQUESINA -->
 <div id="topbar">
   <div class="glass marquee-wrap" style="height:100%;border-radius:0 0 12px 12px;border-top:none;display:flex;align-items:center;">
     <div class="marquee-track" id="marquee-el"></div>
   </div>
 </div>
 
-<!-- ── WEBCAM + NOMBRE (arriba izquierda) ── -->
+<!-- GUÍA PUNTEADA (alinear cámara) -->
+<div id="cam-guide">
+  <div id="cam-guide-circle"></div>
+  <div id="cam-guide-label">← coloca tu cámara aquí →</div>
+</div>
+
+<!-- MARCO DE CÁMARA con agujero transparente -->
 <div id="cam-block">
   <div class="cam-wrapper">
     <div class="cam-pulse"></div>
     <div class="cam-ring cam-ring-1"></div>
     <div class="cam-ring cam-ring-2"></div>
     <div class="cam-ring cam-ring-3"></div>
-    <!-- cam-inner tiene border-radius:50% + overflow:hidden → el video queda circular -->
-    <div class="cam-inner">
-      <video id="cam-video" autoplay muted playsinline
-        style="width:100%;height:100%;object-fit:cover;display:none;"></video>
-      <span id="cam-initials" class="neon"
-        style="font-size:24px;font-weight:800;letter-spacing:1px;position:absolute;"></span>
-    </div>
-    <div class="live-badge" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);padding:2px 12px;border-radius:99px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.12em;">LIVE</div>
+    <!-- Este div crea el "agujero": transparente al centro, oscuro alrededor -->
+    <div class="cam-mask-outer"></div>
   </div>
-  <span id="cam-name" class="neon" style="font-size:13px;font-weight:700;letter-spacing:.08em;text-align:center;"></span>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:2px;">
+    <div class="live-badge" style="padding:2px 14px;border-radius:99px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.12em;">LIVE</div>
+    <span id="cam-name" class="neon" style="font-size:13px;font-weight:700;letter-spacing:.08em;"></span>
+  </div>
 </div>
 
-<!-- ── STATS EN VIVO (abajo izquierda) ── -->
+<!-- STATS -->
 <div id="stat-bar">
-  <div class="stat-chip">
-    <span class="stat-value neon" id="stat-followers">—</span>
-    <span class="stat-label">Seguidores</span>
-  </div>
-  <div class="stat-chip">
-    <span class="stat-value neon2" id="stat-likes">—</span>
-    <span class="stat-label">Likes totales</span>
-  </div>
-  <div class="stat-chip">
-    <span class="stat-value" id="stat-videos" style="color:var(--text-primary);">—</span>
-    <span class="stat-label">Videos</span>
-  </div>
+  <div class="stat-chip"><span class="stat-value neon" id="stat-followers">—</span><span class="stat-label">Seguidores</span></div>
+  <div class="stat-chip"><span class="stat-value neon2" id="stat-likes">—</span><span class="stat-label">Likes totales</span></div>
+  <div class="stat-chip"><span class="stat-value" id="stat-videos" style="color:var(--text-primary);">—</span><span class="stat-label">Videos</span></div>
   <div style="display:flex;align-items:center;gap:5px;margin-left:4px;">
     <div class="status-dot" id="fetch-dot"></div>
     <span id="fetch-time" style="font-size:9px;color:var(--text-muted);letter-spacing:.04em;">Cargando…</span>
   </div>
 </div>
 
-<!-- ── SIDEBAR DERECHO ── -->
+<!-- SIDEBAR -->
 <div id="sidebar">
-
-  <!-- Reglas de sala -->
   <div class="glass scanlines noise" style="position:relative;overflow:hidden;padding:14px 16px;">
     <div style="position:relative;z-index:2;">
       <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;" class="neon">
@@ -393,52 +186,44 @@ const CFG = {
       <ul id="rules-list" style="list-style:none;display:flex;flex-direction:column;gap:6px;"></ul>
     </div>
   </div>
-
-  <!-- Metas -->
   <div class="glass" style="padding:14px 16px;">
     <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;" class="neon">
       <i class="fas fa-bullseye" style="margin-right:6px;opacity:.8;"></i>Metas
     </div>
     <div id="goals-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
-
 </div>
 
-<!-- ════════════════════════════════════════
-     PANEL DE CONTROL (tecla C)
-     ════════════════════════════════════════ -->
+<!-- PANEL DE CONTROL -->
 <div id="ctrl-panel">
   <button onclick="togglePanel()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;">✕</button>
-  <div style="font-size:14px;font-weight:700;color:var(--text-primary);">
-    <i class="fas fa-sliders" style="margin-right:8px;color:var(--neon-primary);"></i>Panel de Control
-  </div>
-  <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Cambios en tiempo real · tecla C para abrir/cerrar</div>
+  <div style="font-size:14px;font-weight:700;color:var(--text-primary);"><i class="fas fa-sliders" style="margin-right:8px;color:var(--neon-primary);"></i>Panel de Control</div>
+  <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Tecla C para abrir/cerrar</div>
 
   <div class="section-title" style="margin-top:14px;">Streamer</div>
   <label>Nombre</label>
   <input type="text" id="p-name" oninput="liveUpdateName(this.value)">
 
+  <div class="section-title">Ajuste del círculo de cámara</div>
+  <label>Tamaño del marco con anillos (px)</label>
+  <input type="range" min="120" max="300" value="180" id="sl-size" oninput="setCamSize(+this.value)">
+  <div style="font-size:11px;color:var(--neon-primary);margin-top:2px;" id="lbl-size">180 px</div>
+  <label style="margin-top:10px;">Diámetro del agujero transparente (px)</label>
+  <input type="range" min="80" max="260" value="118" id="sl-hole" oninput="setCamHole(+this.value)">
+  <div style="font-size:11px;color:var(--neon-primary);margin-top:2px;" id="lbl-hole">118 px</div>
+  <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.6;">
+    💡 En TikTok LIVE Studio: añade tu fuente de <b style="color:var(--neon-primary)">Cámara</b> debajo del overlay y ajusta su tamaño hasta que quepa dentro del círculo punteado.
+  </div>
+
   <div class="section-title">TikTok</div>
   <label>Usuario (sin @)</label>
   <input type="text" id="p-user" oninput="CFG.tiktok.username=this.value">
-  <button onclick="fetchTikTok()" style="margin-top:8px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(0,245,255,.08);color:var(--neon-primary);font-size:12px;cursor:pointer;letter-spacing:.05em;">
-    <i class="fas fa-rotate" style="margin-right:6px;"></i>Actualizar datos ahora
-  </button>
+  <button onclick="fetchTikTok()" style="margin-top:8px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(0,245,255,.08);color:var(--neon-primary);font-size:12px;cursor:pointer;letter-spacing:.05em;"><i class="fas fa-rotate" style="margin-right:6px;"></i>Actualizar datos ahora</button>
 
-  <div class="section-title">Cámara web</div>
-  <button onclick="startWebcam()" style="margin-top:4px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(0,245,255,.08);color:var(--neon-primary);font-size:12px;cursor:pointer;letter-spacing:.05em;">
-    <i class="fas fa-camera" style="margin-right:6px;"></i>Activar cámara circular
-  </button>
-  <button onclick="stopWebcam()" style="margin-top:6px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,0,68,.08);color:#ff4466;font-size:12px;cursor:pointer;letter-spacing:.05em;">
-    <i class="fas fa-camera-slash" style="margin-right:6px;"></i>Detener cámara
-  </button>
-
-  <div class="section-title">Metas — objetivos</div>
+  <div class="section-title">Metas</div>
   <div id="p-goals"></div>
-
   <div class="section-title">Reglas de sala</div>
   <div id="p-rules"></div>
-
   <div class="section-title">Colores del tema</div>
   <div class="color-row">
     <div class="color-item"><input type="color" id="c1" oninput="setVar('--neon-primary',this.value);setVar('--cam-ring-1',this.value);setVar('--progress-from',this.value)"><span>Primario</span></div>
@@ -449,198 +234,92 @@ const CFG = {
 
 <div class="hotkey">C — Panel de Control</div>
 
-<!-- ════════════════════════════════════════
-     JAVASCRIPT
-     ════════════════════════════════════════ -->
 <script>
-/* ── Utilidades ── */
-const $ = id => document.getElementById(id);
-const setVar = (v, c) => document.documentElement.style.setProperty(v, c);
+const $=id=>document.getElementById(id);
+const setVar=(v,c)=>document.documentElement.style.setProperty(v,c);
+function fmtNum(n){if(n==null||isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString();}
 
-function fmtNum(n) {
-  if (n == null || isNaN(n)) return '—';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return n.toLocaleString();
+function setCamSize(v){
+  setVar('--cam-size',v+'px');
+  $('lbl-size').textContent=v+' px';
+  $('cam-guide').style.width=v+'px';
+  $('cam-guide').style.height=v+'px';
+}
+function setCamHole(v){
+  setVar('--cam-hole',v+'px');
+  $('lbl-hole').textContent=v+' px';
+  $('cam-guide-circle').style.width=v+'px';
+  $('cam-guide-circle').style.height=v+'px';
 }
 
-/* ── Marquesina ── */
-function buildMarquee() {
-  const items = [...CFG.socials, ...CFG.socials];
-  $('marquee-el').innerHTML = items.map(s => `
-    <div style="display:inline-flex;align-items:center;gap:7px;padding:0 24px;white-space:nowrap;">
-      <i class="${s.icon}" style="font-size:14px;color:${s.color};"></i>
-      <span style="font-size:12px;font-weight:600;color:var(--text-primary);">${s.handle}</span>
-      <span style="color:rgba(0,245,255,.2);font-size:9px;">◆</span>
-    </div>`).join('');
+function buildMarquee(){
+  const items=[...CFG.socials,...CFG.socials];
+  $('marquee-el').innerHTML=items.map(s=>`<div style="display:inline-flex;align-items:center;gap:7px;padding:0 24px;white-space:nowrap;"><i class="${s.icon}" style="font-size:14px;color:${s.color};"></i><span style="font-size:12px;font-weight:600;color:var(--text-primary);">${s.handle}</span><span style="color:rgba(0,245,255,.2);font-size:9px;">◆</span></div>`).join('');
 }
+function buildCam(){$('cam-name').textContent=CFG.streamer.name;}
+function buildRules(){$('rules-list').innerHTML=CFG.rules.map(r=>`<li style="font-size:11.5px;color:var(--text-muted);line-height:1.5;">${r}</li>`).join('');}
 
-/* ── Cámara ── */
-function buildCam() {
-  $('cam-initials').textContent = CFG.streamer.initials;
-  $('cam-name').textContent    = CFG.streamer.name;
-}
-
-let camStream = null;
-
-async function startWebcam() {
-  try {
-    // Pide acceso a la cámara (solo video, sin audio)
-    camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    const video = $('cam-video');
-    video.srcObject = camStream;
-    video.style.display = 'block';          // muestra el video
-    $('cam-initials').style.display = 'none'; // oculta las iniciales
-  } catch (err) {
-    console.warn('Webcam no disponible:', err);
-    alert('No se pudo acceder a la cámara.\n' + err.message);
-  }
-}
-
-function stopWebcam() {
-  if (camStream) {
-    camStream.getTracks().forEach(t => t.stop());
-    camStream = null;
-  }
-  $('cam-video').style.display = 'none';
-  $('cam-initials').style.display = '';
-}
-
-/* ── Reglas ── */
-function buildRules() {
-  $('rules-list').innerHTML = CFG.rules.map(r => `
-    <li style="font-size:11.5px;color:var(--text-muted);line-height:1.5;">${r}</li>`).join('');
-}
-
-/* ── Metas (con datos reales de TikTok) ── */
-let liveData = { followers: null, likes: null };
-
-function buildGoals() {
-  const targets = [
-    { label: 'Seguidores', current: liveData.followers, target: CFG.tiktok.goals[0].targetK * 1000, unit: 'seguidores' },
-    { label: 'Likes totales', current: liveData.likes, target: CFG.tiktok.goals[1].targetM * 1e6, unit: 'likes' },
+let liveData={followers:null,likes:null};
+function buildGoals(){
+  const targets=[
+    {label:'Seguidores',   current:liveData.followers,target:CFG.tiktok.goals[0].targetK*1000},
+    {label:'Likes totales',current:liveData.likes,    target:CFG.tiktok.goals[1].targetM*1e6},
   ];
-  $('goals-list').innerHTML = targets.map((g, i) => {
-    const pct = (g.current != null && g.target > 0)
-      ? Math.min(100, Math.round(g.current / g.target * 100)) : 0;
-    const curr = g.current != null ? fmtNum(g.current) : '…';
-    const tgt  = fmtNum(g.target);
-    return `
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text-primary);">${g.label}</span>
-          <span style="font-size:11px;color:var(--text-muted);">
-            <span class="${i===0?'neon':'neon2'}" style="font-weight:700;">${curr}</span>
-            / ${tgt}
-            <span style="font-size:10px;margin-left:3px;color:var(--neon-secondary);">${pct}%</span>
-          </span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" style="width:${pct}%;"></div>
-        </div>
-      </div>`;
+  $('goals-list').innerHTML=targets.map((g,i)=>{
+    const pct=(g.current!=null&&g.target>0)?Math.min(100,Math.round(g.current/g.target*100)):0;
+    const curr=g.current!=null?fmtNum(g.current):'…';
+    return`<div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;"><span style="font-size:12px;font-weight:600;color:var(--text-primary);">${g.label}</span><span style="font-size:11px;color:var(--text-muted);"><span class="${i===0?'neon':'neon2'}" style="font-weight:700;">${curr}</span> / ${fmtNum(g.target)}<span style="font-size:10px;margin-left:3px;color:var(--neon-secondary);">${pct}%</span></span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div></div>`;
   }).join('');
 }
 
-/* ── Fetch datos TikTok vía Countik ── */
-async function fetchTikTok() {
-  const dot = $('fetch-dot');
-  const msg = $('fetch-time');
-  try {
-    const url = `https://countik.com/api/userinfo/username?username=${CFG.tiktok.username}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const d = await res.json();
-
-    const followers = d.follower_count  ?? d.fans    ?? d.followers ?? null;
-    const likes     = d.total_favorited ?? d.likes   ?? d.heart     ?? null;
-    const videos    = d.aweme_count     ?? d.videos  ?? null;
-
-    liveData = { followers, likes, videos };
-
-    $('stat-followers').textContent = fmtNum(followers);
-    $('stat-likes').textContent     = fmtNum(likes);
-    $('stat-videos').textContent    = videos != null ? videos : '—';
-
-    dot.className = 'status-dot';
-    const now = new Date();
-    msg.textContent = `Act. ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+async function fetchTikTok(){
+  const dot=$('fetch-dot'),msg=$('fetch-time');
+  try{
+    const res=await fetch(`https://countik.com/api/userinfo/username?username=${CFG.tiktok.username}`);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const d=await res.json();
+    const followers=d.follower_count??d.fans??d.followers??null;
+    const likes=d.total_favorited??d.likes??d.heart??null;
+    const videos=d.aweme_count??d.videos??null;
+    liveData={followers,likes,videos};
+    $('stat-followers').textContent=fmtNum(followers);
+    $('stat-likes').textContent=fmtNum(likes);
+    $('stat-videos').textContent=videos!=null?videos:'—';
+    dot.className='status-dot';
+    const n=new Date();
+    msg.textContent=`Act. ${n.getHours().toString().padStart(2,'0')}:${n.getMinutes().toString().padStart(2,'0')}:${n.getSeconds().toString().padStart(2,'0')}`;
     buildGoals();
-
-  } catch (err) {
-    dot.className = 'status-dot error';
-    msg.textContent = 'Sin datos · reintentando…';
-    console.warn('Countik fetch error:', err);
-  }
+  }catch(e){dot.className='status-dot error';msg.textContent='Sin datos · reintentando…';}
 }
 
-/* ── Panel de control ── */
-let panelOpen = false;
-function togglePanel() {
-  panelOpen = !panelOpen;
-  $('ctrl-panel').classList.toggle('open', panelOpen);
-  if (panelOpen) buildPanelInputs();
+let panelOpen=false;
+function togglePanel(){
+  panelOpen=!panelOpen;
+  $('ctrl-panel').classList.toggle('open',panelOpen);
+  if(panelOpen)buildPanelInputs();
 }
-document.addEventListener('keydown', e => {
-  if ((e.key === 'c' || e.key === 'C') && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName))
-    togglePanel();
+document.addEventListener('keydown',e=>{
+  if((e.key==='c'||e.key==='C')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName))togglePanel();
 });
-
-function buildPanelInputs() {
-  $('p-name').value = CFG.streamer.name;
-  $('p-user').value = CFG.tiktok.username;
-
-  $('p-goals').innerHTML = CFG.tiktok.goals.map((g, i) => `
-    <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:6px;">
-      <div>
-        <label>Meta ${i+1} — etiqueta</label>
-        <input type="text" value="${g.label}" oninput="CFG.tiktok.goals[${i}].label=this.value;buildGoals()">
-      </div>
-      <div>
-        <label>Objetivo (${g.unit})</label>
-        <input type="number" value="${g['targetK'] || g['targetM']}"
-          oninput="CFG.tiktok.goals[${i}]['target${g.unit}']= +this.value;buildGoals()">
-      </div>
-    </div>`).join('');
-
-  $('p-rules').innerHTML = CFG.rules.map((r, i) => `
-    <label>Regla ${i+1}</label>
-    <input type="text" value="${r}" oninput="CFG.rules[${i}]=this.value;buildRules()">`).join('');
-
+function buildPanelInputs(){
+  $('p-name').value=CFG.streamer.name;
+  $('p-user').value=CFG.tiktok.username;
+  $('p-goals').innerHTML=CFG.tiktok.goals.map((g,i)=>`<div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:6px;"><div><label>Meta ${i+1}</label><input type="text" value="${g.label}" oninput="CFG.tiktok.goals[${i}].label=this.value;buildGoals()"></div><div><label>Objetivo</label><input type="number" value="${g['targetK']||g['targetM']}" oninput="CFG.tiktok.goals[${i}]['target${g.unit}']= +this.value;buildGoals()"></div></div>`).join('');
+  $('p-rules').innerHTML=CFG.rules.map((r,i)=>`<label>Regla ${i+1}</label><input type="text" value="${r}" oninput="CFG.rules[${i}]=this.value;buildRules()">`).join('');
   syncPickers();
 }
-
-function liveUpdateName(v) {
-  CFG.streamer.name = v;
-  CFG.streamer.initials = v.slice(0,2).toUpperCase();
-  buildCam();
+function liveUpdateName(v){CFG.streamer.name=v;buildCam();}
+function syncPickers(){
+  const toHex=v=>{v=v.trim();if(v.startsWith('#'))return v.slice(0,7);const m=v.match(/\d+/g);if(!m||m.length<3)return'#00f5ff';return'#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('');};
+  const st=getComputedStyle(document.documentElement);
+  $('c1').value=toHex(st.getPropertyValue('--neon-primary'));
+  $('c2').value=toHex(st.getPropertyValue('--neon-secondary'));
+  $('c3').value=toHex(st.getPropertyValue('--neon-accent'));
 }
 
-function syncPickers() {
-  const toHex = v => {
-    v = v.trim();
-    if (v.startsWith('#')) return v.slice(0,7);
-    const m = v.match(/\d+/g);
-    if (!m || m.length < 3) return '#00f5ff';
-    return '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('');
-  };
-  const st = getComputedStyle(document.documentElement);
-  $('c1').value = toHex(st.getPropertyValue('--neon-primary'));
-  $('c2').value = toHex(st.getPropertyValue('--neon-secondary'));
-  $('c3').value = toHex(st.getPropertyValue('--neon-accent'));
-}
-
-/* ── Init ── */
-buildMarquee();
-buildCam();
-buildRules();
-buildGoals();
-
-// Intenta activar la cámara automáticamente al cargar
-startWebcam();
-
+buildMarquee();buildCam();buildRules();buildGoals();
 fetchTikTok();
-setInterval(fetchTikTok, CFG.tiktok.fetchInterval);
+setInterval(fetchTikTok,CFG.tiktok.fetchInterval);
 </script>
 </body>
 </html>
