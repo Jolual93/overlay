@@ -282,6 +282,20 @@ html, body {
   gap: 10px;
   align-items: center;
 }
+
+/* ── Aviso de cámara ── */
+#cam-notice {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--panel-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 20px 28px;
+  text-align: center;
+  z-index: 999;
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -335,8 +349,12 @@ const CFG = {
     <div class="cam-ring cam-ring-1"></div>
     <div class="cam-ring cam-ring-2"></div>
     <div class="cam-ring cam-ring-3"></div>
+    <!-- cam-inner tiene border-radius:50% + overflow:hidden → el video queda circular -->
     <div class="cam-inner">
-      <span id="cam-initials" class="neon" style="font-size:24px;font-weight:800;letter-spacing:1px;"></span>
+      <video id="cam-video" autoplay muted playsinline
+        style="width:100%;height:100%;object-fit:cover;display:none;"></video>
+      <span id="cam-initials" class="neon"
+        style="font-size:24px;font-weight:800;letter-spacing:1px;position:absolute;"></span>
     </div>
     <div class="live-badge" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);padding:2px 12px;border-radius:99px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.12em;">LIVE</div>
   </div>
@@ -407,6 +425,14 @@ const CFG = {
     <i class="fas fa-rotate" style="margin-right:6px;"></i>Actualizar datos ahora
   </button>
 
+  <div class="section-title">Cámara web</div>
+  <button onclick="startWebcam()" style="margin-top:4px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(0,245,255,.08);color:var(--neon-primary);font-size:12px;cursor:pointer;letter-spacing:.05em;">
+    <i class="fas fa-camera" style="margin-right:6px;"></i>Activar cámara circular
+  </button>
+  <button onclick="stopWebcam()" style="margin-top:6px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,0,68,.08);color:#ff4466;font-size:12px;cursor:pointer;letter-spacing:.05em;">
+    <i class="fas fa-camera-slash" style="margin-right:6px;"></i>Detener cámara
+  </button>
+
   <div class="section-title">Metas — objetivos</div>
   <div id="p-goals"></div>
 
@@ -453,6 +479,31 @@ function buildMarquee() {
 function buildCam() {
   $('cam-initials').textContent = CFG.streamer.initials;
   $('cam-name').textContent    = CFG.streamer.name;
+}
+
+let camStream = null;
+
+async function startWebcam() {
+  try {
+    // Pide acceso a la cámara (solo video, sin audio)
+    camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = $('cam-video');
+    video.srcObject = camStream;
+    video.style.display = 'block';          // muestra el video
+    $('cam-initials').style.display = 'none'; // oculta las iniciales
+  } catch (err) {
+    console.warn('Webcam no disponible:', err);
+    alert('No se pudo acceder a la cámara.\n' + err.message);
+  }
+}
+
+function stopWebcam() {
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+  $('cam-video').style.display = 'none';
+  $('cam-initials').style.display = '';
 }
 
 /* ── Reglas ── */
@@ -584,6 +635,9 @@ buildMarquee();
 buildCam();
 buildRules();
 buildGoals();
+
+// Intenta activar la cámara automáticamente al cargar
+startWebcam();
 
 fetchTikTok();
 setInterval(fetchTikTok, CFG.tiktok.fetchInterval);
