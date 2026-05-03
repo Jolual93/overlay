@@ -398,5 +398,48 @@ buildMarquee(); buildCam(); buildRules(); buildGoals();
 fetchTikTok();
 setInterval(fetchTikTok, CFG.tiktok.fetchInterval);
 </script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+// ==========================================
+// CONEXIÓN AL LIVE EN TIEMPO REAL (NODE.JS)
+// ==========================================
+const socket = io('http://localhost:3000'); // Conecta a tu ventana negra
+
+// 1. Escuchar LIKES en vivo
+socket.on('evento-like', (data) => {
+    if (liveData.likes !== null) {
+        // Sumar los likes a tu contador
+        liveData.likes += data.cantidad;
+        
+        // Actualizar el número en la barra superior
+        $('stat-likes').textContent = fmtNum(liveData.likes);
+        
+        // ¡Magia! Esto hace que la barra de progreso "Metas" suba en vivo
+        buildGoals(); 
+    }
+});
+
+// 2. Escuchar SEGUIDORES en vivo
+socket.on('evento-follow', (data) => {
+    if (liveData.followers !== null) {
+        // Sumar 1 seguidor
+        liveData.followers += 1;
+        
+        // Actualizar el número
+        $('stat-followers').textContent = fmtNum(liveData.followers);
+        
+        // Actualizar la barra de progreso
+        buildGoals();
+    }
+});
+
+// 3. (Opcional) Escuchar REGALOS
+socket.on('evento-regalo', (data) => {
+    // Aquí puedes hacer que el marco de tu cámara brille de otro color, 
+    // o hacer aparecer un cartel que diga "Gracias por el regalo"
+    console.log("Regalo recibido: " + data.regalo);
+});
+</script>
 </body>
 </html>
